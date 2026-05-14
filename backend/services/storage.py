@@ -27,6 +27,12 @@ MAX_BYTES     = MAX_UPLOAD_MB * 1024 * 1024
 # Only CSV files accepted
 ALLOWED_EXTENSIONS = {".csv"}
 
+def safe_path(filename: str, upload_dir: str) -> str:
+    filepath = os.path.abspath(os.path.join(upload_dir, filename))
+    if not filepath.startswith(os.path.abspath(upload_dir)):
+        raise ValueError("Path traversal detected")
+    return filepath
+
 
 def _ensure_upload_dir() -> None:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
