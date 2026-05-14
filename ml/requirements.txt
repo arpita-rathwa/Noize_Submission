@@ -1,0 +1,37 @@
+# ============================================================
+# NOIZE — requirements.txt
+# Install with: pip install -r requirements.txt
+# ============================================================
+
+# ── Core data science ────────────────────────────────────────
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# ── Visualisation ────────────────────────────────────────────
+plotly>=5.15.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# ── API ──────────────────────────────────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.24.0
+gunicorn>=22.0.0              # FIX 3: production WSGI server
+firebase-admin>=6.4.0         # FIX 4: Firestore audit trail storage
+python-multipart>=0.0.9    # required for UploadFile
+
+# ── PDF reports ──────────────────────────────────────────────
+reportlab>=4.0.0
+
+# ── AI explanations (optional) ───────────────────────────────
+google-generativeai>=0.5.0
+
+# ── Fairness library (optional extra metrics) ────────────────
+fairlearn>=0.10.0
+
+# ── Testing ──────────────────────────────────────────────────
+pytest>=7.4.0
+httpx>=0.26.0              # for FastAPI TestClient
+
+# ── Dev tooling ──────────────────────────────────────────────
+joblib>=1.3.0

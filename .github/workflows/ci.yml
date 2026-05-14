@@ -1,0 +1,70 @@
+name: NOIZE CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Backend tests ────────────────────────────────────────────
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+        env:
+          SECRET_KEY: ci-test-secret-key-not-for-production
+          REFRESH_SECRET_KEY: ci-test-refresh-key-not-for-production
+          UPLOAD_DIR: /tmp/noize_test_uploads
+          DB_FILE: /tmp/noize_test.json
+
+  # ── ML engine tests ──────────────────────────────────────────
+  ml:
+    name: ML Engine Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  # ── Docker build check ───────────────────────────────────────
+  docker:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: [backend, ml]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -t noize-backend ./backend
+      - name: Build ML image
+        run: docker build -t noize-ml ./ml
+      - name: Smoke test backend
+        run: |
+          docker run -d --name backend_test -p 8001:8001 \
+            -e SECRET_KEY=test -e REFRESH_SECRET_KEY=test2 \
+            -e ML_ENGINE_URL=http://localhost:8000 \
+            noize-backend
+          sleep 5
+          curl --fail http://localhost:8001/health || exit 1
+          docker stop backend_test

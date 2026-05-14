@@ -1,0 +1,39 @@
+name: noize_ml
+description: "NOIZE — AI Fairness Audit Platform"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.4.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── UI ──────────────────────────────────────────────────────
+  google_fonts: ^6.2.1
+  cupertino_icons: ^1.0.8
+
+  # ── Networking ──────────────────────────────────────────────
+  http: ^1.2.1
+
+  # ── File handling ────────────────────────────────────────────
+  file_picker: ^8.0.0+1
+
+  # ── State & storage ──────────────────────────────────────────
+  shared_preferences: ^2.2.3
+  provider: ^6.1.2
+
+  # ── PDF viewing (production: open generated report in-app) ──
+  # Uncomment when ready:
+  # open_filex: ^1.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/noize_logo.png

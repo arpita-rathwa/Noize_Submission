@@ -1,0 +1,65 @@
+# ── Secrets — NEVER commit these ─────────────────────────────
+.env
+*.env
+.env.local
+.env.production
+secrets.json
+service-account*.json
+firebase-adminsdk*.json
+google-credentials*.json
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# ── Virtual environments ──────────────────────────────────────
+venv/
+env/
+.venv/
+.env/
+
+# ── Backend runtime files ─────────────────────────────────────
+backend/db.json
+backend/uploads/
+backend/*.json
+
+# ── ML runtime files ──────────────────────────────────────────
+ml/data/*.csv
+ml/models/
+ml/reports/
+*.pkl
+*.joblib
+
+# ── Flutter / Dart ────────────────────────────────────────────
+flutter/.dart_tool/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+flutter/build/
+flutter/.packages
+flutter/pubspec.lock
+*.iml
+
+# ── IDE ───────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ── Docker ────────────────────────────────────────────────────
+*.pid
+!ml/data/sample_loan.csv
+!ml/data/download_datasets.sh

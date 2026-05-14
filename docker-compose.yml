@@ -1,0 +1,88 @@
+# ============================================================
+# NOIZE — docker-compose.yml
+# Wires Backend + ML Engine together with correct ports,
+# shared network, and health-check startup order.
+#
+# Usage:
+#   cp backend/.env.example backend/.env   # fill in your keys
+#   docker-compose up --build
+#
+# Services:
+#   ml       → port 8000  (ML engine — bias detection)
+#   backend  → port 8001  (REST API  — auth, upload, audit)
+#
+# Flutter app connects to backend on port 8001.
+# Backend connects to ml internally via http://ml:8000.
+# ============================================================
+
+version: "3.9"
+
+services:
+
+  # ── ML Engine ──────────────────────────────────────────────
+  ml:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    container_name: noize_ml
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:3000}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      # Persist dataset files across restarts
+      - ml_data:/app/data
+      - ml_reports:/app/reports
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - noize_network
+
+  # ── Backend API ────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: noize_backend
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./backend/.env
+    environment:
+      # BUG FIX: In Docker, ML engine is reachable via service name "ml",
+      # NOT localhost. This was the key integration bug — backend was calling
+      # http://localhost:8000 which doesn't work inside a Docker container.
+      - ML_ENGINE_URL=http://ml:8000
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:3000}
+    volumes:
+      # Persist uploads and database across restarts
+      - backend_uploads:/app/uploads
+      - backend_db:/app
+    depends_on:
+      ml:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - noize_network
+
+volumes:
+  ml_data:
+  ml_reports:
+  backend_uploads:
+  backend_db:
+
+networks:
+  noize_network:
+    driver: bridge
