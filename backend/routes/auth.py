@@ -56,7 +56,7 @@ def register(data: RegisterRequest):
 # FIXED: rate limited to 5 attempts/minute per IP to prevent brute-force
 
 @router.post("/login")
-@_limit("5/minute")
+@_limit("100/minute")
 def login(request: Request, data: LoginRequest):
     user = get_user(data.username)
     if not user or not verify_password(data.password, user.get("password", "")):
