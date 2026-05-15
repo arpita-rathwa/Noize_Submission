@@ -23,6 +23,7 @@ from fastapi.exceptions import HTTPException
 
 from routes import upload, analyze, auth
 from routes.misc import router as misc_router
+from routes.data_routes import router as data_router
 from services.error_handler import global_exception_handler, http_exception_handler
 
 try:
@@ -74,6 +75,7 @@ app.include_router(auth.router)
 app.include_router(upload.router)
 app.include_router(analyze.router)
 app.include_router(misc_router)
+app.include_router(data_router)
 
 @app.get("/", tags=["Health"])
 def root():

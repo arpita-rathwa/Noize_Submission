@@ -173,6 +173,7 @@ class PreMitigation:
                 median_dist = np.median(interpolated, axis=0)
 
                 # Repair each group
+                orig_dtype = df_rep[col].dtype   # preserve int/float dtype
                 for g in self.groups:
                     mask     = df_rep[self.protected_col] == g
                     idx      = df_rep[mask].index
@@ -180,7 +181,9 @@ class PreMitigation:
                     ranks    = np.argsort(np.argsort(orig))
                     pos      = ranks / max(len(orig) - 1, 1)
                     repaired = np.interp(pos, np.linspace(0, 1, max_len), median_dist)
-                    df_rep.loc[idx, col] = (1 - repair_level) * orig + repair_level * repaired
+                    blended  = (1 - repair_level) * orig + repair_level * repaired
+                    # Cast back to original dtype to avoid pandas 2.x LossySetitemError
+                    df_rep.loc[idx, col] = blended.astype(orig_dtype)
 
                 repaired_cols.append(col)
 

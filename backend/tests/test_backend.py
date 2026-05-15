@@ -39,6 +39,37 @@ client = TestClient(app, raise_server_exceptions=False)
 
 SAMPLE_CSV = b"sex,income\nMale,1\nMale,1\nFemale,0\nFemale,1\nMale,0\n"
 
+# ── ML engine mock ────────────────────────────────────────────
+# The backend calls the ML engine via httpx.  In unit tests the ML
+# service is not running, so we patch httpx.post to return a realistic
+# canned response.  This fixes every 503 "ML engine is not running" failure.
+
+ML_MOCK_RESPONSE = {
+    "basic_info":  {"total_rows": 5, "total_cols": 2, "filename": "test.csv"},
+    "data_quality": {"score": 72.5, "issues": []},
+    "protected_attributes": ["sex"],
+    "target_candidates":    ["income"],
+    "bias_metrics": {
+        "disparate_impact": 0.67,
+        "statistical_parity_gap": 0.15,
+        "verdict": "MEDIUM BIAS",
+    },
+}
+
+class _FakeMLResponse:
+    status_code = 200
+    def json(self): return ML_MOCK_RESPONSE
+    def raise_for_status(self): pass
+
+import unittest.mock as _mock
+
+# Autouse fixture — applies to every test in this file automatically.
+@pytest.fixture(autouse=True)
+def mock_ml_engine(monkeypatch):
+    monkeypatch.setattr("httpx.post", _mock.Mock(return_value=_FakeMLResponse()))
+    yield
+
+
 def _register_and_login(username: str = None, password: str = "Password1") -> str:
     """Register a user and return a Bearer token."""
     username = username or f"user_{uuid.uuid4().hex[:8]}"

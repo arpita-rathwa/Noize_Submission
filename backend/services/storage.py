@@ -99,14 +99,26 @@ def save_file(content: bytes, original_filename: str) -> str:
 def get_upload_path(filename: str) -> str:
     """
     Reconstruct the full server path for a previously uploaded file.
-    Raises ValueError if the path would escape UPLOAD_DIR.
+    Raises ValueError if the raw filename contains path traversal sequences.
     """
-    # Sanitise again — client-supplied value must not traverse paths
-    safe_name = os.path.basename(filename.replace("\\", "/"))
-    full_path = os.path.realpath(os.path.join(UPLOAD_DIR, safe_name))
+    # Detect traversal attempt on the RAW input before any sanitisation.
+    # Filenames stored by save_file() are already safe basenames, so any
+    # slash, backslash, or ".." in the caller-supplied name is an attack.
+    normalised = filename.replace("\\", "/")
+    if ".." in normalised or "/" in normalised:
+        raise ValueError(
+            f"Invalid filename '{filename}' — path traversal attempt detected."
+        )
+
+    safe_name   = os.path.basename(normalised)
+    full_path   = os.path.realpath(os.path.join(UPLOAD_DIR, safe_name))
     upload_real = os.path.realpath(UPLOAD_DIR)
 
-    if not full_path.startswith(upload_real + os.sep) and full_path != upload_real:
+    try:
+        common = os.path.commonpath([full_path, upload_real])
+    except ValueError:
+        common = ""
+    if common != upload_real:
         raise ValueError("Invalid filename — path traversal attempt detected.")
 
     return full_path

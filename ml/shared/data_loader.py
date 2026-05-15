@@ -115,12 +115,15 @@ def load_dataset(filepath: str) -> tuple[pd.DataFrame, dict]:
     except Exception as exc:
         raise ValueError(f"Could not parse {filepath}: {exc}") from exc
 
-    # FIXED: guard against OOM from huge CSV files
+    # FIXED: guard against OOM from huge CSV files.
+    # Read env var lazily here (not at module import time) so that
+    # test-level os.environ overrides are respected.
+    max_cells = int(os.getenv("MAX_DATASET_CELLS", str(50_000 * 200)))
     cells = df.shape[0] * df.shape[1]
-    if cells > MAX_DATASET_CELLS:
+    if cells > max_cells:
         raise ValueError(
             f"Dataset too large: {df.shape[0]:,} rows × {df.shape[1]} columns = "
-            f"{cells:,} cells. Limit is {MAX_DATASET_CELLS:,} cells. "
+            f"{cells:,} cells. Limit is {max_cells:,} cells. "
             "Reduce dataset size or increase MAX_DATASET_CELLS env var."
         )
     logger.info("Loaded %s: %d rows × %d cols (type=%s)", filepath, df.shape[0], df.shape[1], dtype)
