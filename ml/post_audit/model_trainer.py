@@ -67,6 +67,11 @@ class ModelTrainer:
         test_size: float = 0.2,
         random_state: int = 42,
     ):
+        if df.empty or len(df) == 0:
+            raise ValueError(
+                "ModelTrainer received an empty DataFrame. "
+                "Provide at least a few rows to train on."
+            )
         self.df            = binarize_target(df.copy(), target_col)
         self.protected_col = protected_col
         self.target_col    = target_col

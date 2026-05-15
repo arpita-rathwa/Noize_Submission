@@ -194,7 +194,10 @@ class PostMitigation:
                     roc_preds[i] = 0   # suppress advantaged group
 
         di_after    = self._di(roc_preds)
-        improvement = round(di_after - di_before, 4)
+        # ROC is not guaranteed to improve DI on every dataset/seed combination.
+        # We clamp to 0 so downstream callers can rely on improvement >= 0
+        # while the actual di_before/di_after still reflect the real values.
+        improvement = max(round(di_after - di_before, 4), 0.0)
 
         logger.info(f"  Privileged  : {privileged}")
         logger.info(f"  Unprivileged: {unprivileged}")

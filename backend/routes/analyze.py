@@ -37,6 +37,29 @@ def analyze(data: AnalyzeRequest, user: str = Depends(get_current_user)):
             detail=f"File '{data.filename}' not found. Upload it first via /upload/."
         )
 
+    # Step 1b: validate requested columns exist before calling ML engine
+    # Returns 422 (not 503) so tests that omit columns get the right status code.
+    try:
+        import pandas as _pd
+        _header = _pd.read_csv(file_path, nrows=0)
+        _cols   = set(_header.columns.str.strip())
+        if data.target_column not in _cols:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Column '{data.target_column}' not found in dataset. "
+                       f"Available columns: {sorted(_cols)}",
+            )
+        if data.protected_column and data.protected_column not in _cols:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Column '{data.protected_column}' not found in dataset. "
+                       f"Available columns: {sorted(_cols)}",
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not read CSV headers: {exc}")
+
     # Step 2: forward file to ML engine
     try:
         with open(file_path, "rb") as f:
@@ -61,9 +84,12 @@ def analyze(data: AnalyzeRequest, user: str = Depends(get_current_user)):
     # Step 3: extract and store results
     quality  = ml.get("data_quality", {})
     basic    = ml.get("basic_info", {})
+    bias_metrics = ml.get("bias_metrics", {})
     total_rows = int(basic.get("total_rows", 0))
     fairness_score = float(quality.get("score", 50))
     confidence_score = round(min(total_rows / 1000, 1.0) * 100, 2)
+    disparate_impact = float(bias_metrics.get("disparate_impact", 0.0))
+    statistical_parity_gap = float(bias_metrics.get("statistical_parity_gap", 0.0))
 
     if fairness_score >= 80:   verdict, emoji = "LOW BIAS",    "🟢"
     elif fairness_score >= 60: verdict, emoji = "MEDIUM BIAS", "🟡"
@@ -77,6 +103,8 @@ def analyze(data: AnalyzeRequest, user: str = Depends(get_current_user)):
         "metrics": {
             "fairness_score": fairness_score, "confidence_score": confidence_score,
             "verdict": verdict, "emoji": emoji,
+            "disparate_impact": disparate_impact,
+            "statistical_parity_gap": statistical_parity_gap,
             "data_quality": quality,
             "protected_attrs": ml.get("protected_attributes", []),
             "target_candidates": ml.get("target_candidates", []),
@@ -94,6 +122,8 @@ def analyze(data: AnalyzeRequest, user: str = Depends(get_current_user)):
             "verdict": verdict,
             "emoji": emoji,
             "rows": total_rows,
+            "disparate_impact": disparate_impact,
+            "statistical_parity_gap": statistical_parity_gap,
             "protected_attrs": ml.get("protected_attributes", []),
             "target_candidates": ml.get("target_candidates", []),
             "data_quality": quality,
