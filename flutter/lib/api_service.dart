@@ -18,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 //   flutter run  --dart-define=BASE_URL=http://192.168.1.100:8001
 //   flutter build apk --dart-define=BASE_URL=https://api.yourapp.com
 const String kBaseUrl =
-    String.fromEnvironment('BASE_URL', defaultValue: 'http://localhost:8001');
+    String.fromEnvironment('BASE_URL', defaultValue: 'https://determined-enchantment-production-de8a.up.railway.app');
 
 const _kShort  = Duration(seconds: 15);
 const _kLong   = Duration(seconds: 90);
