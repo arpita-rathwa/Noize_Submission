@@ -490,6 +490,7 @@ class _UploadPageState extends State<UploadPage> {
   bool _isDragging = false;
   String _fileName = 'None';
   File? _selectedFile;
+  List<int>? _pickedBytes;
   bool _uploading = false;
 
   // BUG FIX: dropdown values are now used in the real API call
@@ -499,30 +500,32 @@ class _UploadPageState extends State<UploadPage> {
   final List<String> _targetOptions = ['income', 'loan_status', 'two_year_recid', 'credit_risk'];
   final List<String> _attributeOptions = ['sex', 'race', 'age', 'gender'];
 
-  // BUG FIX: real file picker
+  // WEB FIX: use bytes instead of path — Flutter Web has no file system access
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
+      withData: true,  // force bytes to be loaded
     );
-    if (result != null && result.files.single.path != null) {
+    if (result != null && result.files.single.bytes != null) {
       setState(() {
-        _selectedFile = File(result.files.single.path!);
+        _selectedFile = null; // not used on web
+        _pickedBytes = result.files.single.bytes!;
         _fileName = result.files.single.name;
       });
     }
   }
 
-  // BUG FIX: real upload + analyze pipeline
+  // WEB FIX: upload using bytes
   Future<void> _submit() async {
-    if (_selectedFile == null) {
+    if (_pickedBytes == null) {
       showError(context, 'Please select a CSV file first.');
       return;
     }
     setState(() => _uploading = true);
     try {
-      // Step 1: upload
-      final upResult = await uploadFile(_selectedFile!);
+      // Step 1: upload using bytes
+      final upResult = await uploadFileBytes(_fileName, _pickedBytes!);
       if (!mounted) return;
       if (upResult['success'] != true) {
         showError(context, upResult['error'] ?? 'Upload failed');
