@@ -48,28 +48,27 @@ app.add_exception_handler(Exception, global_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 
 # ── CORS — Blocker 3 fix ──────────────────────────────────────
-# ALLOWED_ORIGINS must be set in .env — no wildcard in production.
-# Flutter web build runs on :8080 by default.
-# Firebase Hosting uses https://your-app.web.app
-# Add BOTH to ALLOWED_ORIGINS before demo day.
+
+# ── CORS ─────────────────────────────────────────────────────
 _raw     = os.getenv("ALLOWED_ORIGINS", "")
 _origins = [o.strip() for o in _raw.split(",") if o.strip()]
-if not _origins:
-    # Safe fallback for local dev — never wildcard
-    _origins = ["http://localhost:8080", "http://localhost:3000",
-                "http://localhost:8001"]
-    logger.warning(
-        "ALLOWED_ORIGINS not set — defaulting to localhost only. "
-        "Set ALLOWED_ORIGINS=https://your-app.web.app in .env for production."
-    )
-if "*" in _origins:
-    logger.error(
-        "ALLOWED_ORIGINS='*' is insecure and will be rejected in production. "
-        "Replace with your actual Flutter/web app URL."
-    )
 
-app.add_middleware(CORSMiddleware, allow_origins=_origins,
-                   allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+_always_allowed = [
+    "https://noize-9216c.web.app",
+    "https://noize-9216c.firebaseapp.com",
+    "http://localhost:8080",
+    "http://localhost:3000",
+]
+
+if not _origins or "*" in _origins:
+    app.add_middleware(CORSMiddleware, allow_origins=["*"],
+                       allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
+    logger.warning("CORS: allowing all origins (wildcard mode)")
+else:
+    _origins = list(set(_origins + _always_allowed))
+    app.add_middleware(CORSMiddleware, allow_origins=_origins,
+                       allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+    logger.info("CORS allowed origins: %s", _origins)
 
 app.include_router(auth.router)
 app.include_router(upload.router)
