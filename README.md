@@ -267,7 +267,7 @@ python -m pytest tests/ -v
 
 ## Team
 
-**Team NOIZE** — Built for Google Developer Student Clubs Solution Challenge Hackathon 2025
+**Team NOIZE** — Built for Google Developer Student Clubs Solution Challenge Hackathon 2026
 
 ---
 
